@@ -37,7 +37,7 @@ public class Routes extends RouteBuilder {
       .setHeader("backend", simple("{{redhat.backend}}"))
       .to("log:DEBUG?showBody=true&showHeaders=false")
       //.toD("https://${header.backend}&bridgeEndpoint=true&throwExceptionOnFailure=false")
-      .toD("https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false")
+      .toD("https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?bridgeEndpoint=true&throwExceptionOnFailure=false")
       .to("log:DEBUG?showBody=true&showHeaders=false");
       
 //      .choice()
