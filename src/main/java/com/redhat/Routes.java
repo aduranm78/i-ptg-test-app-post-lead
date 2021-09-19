@@ -7,6 +7,11 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.stereotype.Component;
 
+import org.apache.camel.Processor;
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
+import java.util.Map;
+
 @Component
 public class Routes extends RouteBuilder {
 
@@ -16,15 +21,21 @@ public class Routes extends RouteBuilder {
       .component("netty-http")
       .port("8080")
       .bindingMode(RestBindingMode.auto);
+
+      String erpUri = "https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false";
+      String NSUri = "https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl";
     
     rest()
       .path("/").consumes("application/json").produces("application/json")
-        .put("/post-lead")
+        .put("/put-lead")
 //          .type(Customer.class).outType(CustomerSuccess.class)
           .to("direct:put-customer")
         .post("/post-lead")
 //          .type(Customer.class).outType(CustomerSuccess.class)
-          .to("direct:post-customer");
+          .to("direct:post-customer")
+        .get("/get-lead")
+  //          .type(Customer.class).outType(CustomerSuccess.class)
+          .to("direct:get-customer");
     
     from("direct:post-customer")
       .setHeader("HTTP_METHOD", constant("POST"))
@@ -32,8 +43,20 @@ public class Routes extends RouteBuilder {
     from("direct:put-customer")
       .setHeader("HTTP_METHOD", constant("PUT"))
       .to("direct:request");
+    from("direct:get-customer")
+      .setHeader("HTTP_METHOD", constant("GET"))
+      .to("direct:request");
 
     from("direct:request")
+      .process(new Processor() {
+        @Override
+        public void process(Exchange exchange) throws Exception {
+          String authHeader = OAuthSign.getAuthHeader(erpUri,"POST"); 
+          exchange.getMessage().setHeader("Authorization", authHeader);
+          //exchange.getMessage().setHeader(Exchange.HTTP_QUERY, "script=580&deploy=2&bridgeEndpoint=true&throwExceptionOnFailure=false");
+          //exchange.getMessage().setHeader(Exchange.HTTP_URI, NSUri);
+        }
+      })
       .setHeader("backend", simple("{{redhat.backend}}"))
       .to("log:DEBUG?showBody=true&showHeaders=true")
       .toD("https://${header.backend}?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false")
