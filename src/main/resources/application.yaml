@@ -18,3 +18,6 @@ endpoints:
 
 redhat:
   backend: ${MY_BACKEND_URL}
+
+logging:
+  file: /deployments/data/drt-energiko.log

@@ -6,6 +6,7 @@ package com.redhat;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.stereotype.Component;
+import org.apache.camel.LoggingLevel;
 
 import org.apache.camel.Processor;
 import org.apache.camel.Exchange;
@@ -23,7 +24,7 @@ public class Routes extends RouteBuilder {
       .bindingMode(RestBindingMode.auto);
 
       String erpUri = "https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false";
-      String NSUri = "https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl";
+      String NSUri = "https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=581&deploy=1";
     
     rest()
       .path("/").consumes("application/json").produces("application/json")
@@ -51,15 +52,18 @@ public class Routes extends RouteBuilder {
       .process(new Processor() {
         @Override
         public void process(Exchange exchange) throws Exception {
-          String authHeader = OAuthSign.getAuthHeader(erpUri,"POST"); 
+          String authHeader = OAuthSign.getAuthHeader(NSUri,"POST"); 
           exchange.getMessage().setHeader("Authorization", authHeader);
-          //exchange.getMessage().setHeader(Exchange.HTTP_QUERY, "script=580&deploy=2&bridgeEndpoint=true&throwExceptionOnFailure=false");
+          System.out.println("header process:"+authHeader);
+          //exchange.getMessage().setHeader(Exchange.HTTP_QUERY, "bridgeEndpoint=true&throwExceptionOnFailure=false");
           //exchange.getMessage().setHeader(Exchange.HTTP_URI, NSUri);
         }
       })
-      .setHeader("backend", simple("{{redhat.backend}}"))
+      //.setHeader("backend", simple("{{redhat.backend}}"))
       .to("log:DEBUG?showBody=true&showHeaders=true")
-      .toD("https://${header.backend}?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false")
+      .toD("https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=581&deploy=1&bridgeEndpoint=true&throwExceptionOnFailure=false")
+      .streamCaching()
+      .log(LoggingLevel.INFO, "${in.headers.CamelFileName}")
       //.toD("https://5298967-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?bridgeEndpoint=true&throwExceptionOnFailure=false")
       .to("log:DEBUG?showBody=true&showHeaders=true");
       
